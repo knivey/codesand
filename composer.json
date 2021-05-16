@@ -1,0 +1,22 @@
+{
+  "name": "knivey/codesand",
+  "description": "Async server for safely running code in containers",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": { "knivey\\codesand\\": "src" }
+  },
+  "authors": [
+    {
+      "name": "knivey",
+      "email": "knivey@botops.net"
+    }
+  ],
+  "require": {
+    "php": ">=8",
+    "amphp/http-server-router": "^1.0",
+    "monolog/monolog": "^2.2",
+    "amphp/log": "^1.1",
+    "ext-pcntl": "*"
+  }
+}
