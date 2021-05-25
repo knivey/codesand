@@ -27,10 +27,13 @@ lxc exec codesand -- /bin/bash
 ###Inside the container:
 
 ```
-apt install php-cli build-essential python
+apt update && apt upgrade
+apt install php-cli build-essential python golang
 adduser codesand
 ```
-install anything else you might need for running scripts etc
+Install anything else you might need for running scripts etc
+
+If you need to update or install things on all the containers later there are scripts to do that. 
 ```bash
 exit
 ```

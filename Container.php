@@ -1,8 +1,5 @@
 <?php
-
-
 namespace codesand;
-
 
 use Amp\Process\Process;
 

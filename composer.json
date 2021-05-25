@@ -4,7 +4,9 @@
   "minimum-stability": "stable",
   "license": "MIT",
   "autoload": {
-    "psr-4": { "knivey\\codesand\\": "src" }
+    "psr-4": {
+      "codesand\\": ""
+    }
   },
   "authors": [
     {
@@ -17,6 +19,7 @@
     "amphp/http-server-router": "^1.0",
     "monolog/monolog": "^2.2",
     "amphp/log": "^1.1",
-    "ext-pcntl": "*"
+    "ext-pcntl": "*",
+    "symfony/yaml": "^5.2"
   }
 }
