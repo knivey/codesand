@@ -128,6 +128,17 @@ class Container
         return $this->runCMD("lxc exec {$this->name} -- su -l codesand -c \"php /home/codesand/running-{$this->name}.php ; echo\"");
     }
 
+    function runBash(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting bash code run\n";
+        $file = __DIR__ . "/running-{$this->name}.sh";
+        file_put_contents($file, $code);
+        $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
+        $this->rootExec("chown -R codesand:codesand /home/codesand/");
+        return $this->runCMD("lxc exec {$this->name} -- su -l codesand -c \"bash /home/codesand/running-{$this->name}.sh ; echo\"");
+    }
+
     /**
      * Runs cmd on container asyncly capturing output for channel
      * @param $cmd
