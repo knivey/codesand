@@ -82,25 +82,31 @@ class Container
         return implode("\n", $r);
     }
 
+    protected $restarting = false;
     function restart() {
+        if($this->restarting)
+            return;
         //During testing with forkbombs etc normal kill methods did not work well and took forever
         $this->rootExec("killall -9 -u codesand");
         //restore will stop anything running but without that kill can take very long
         \Amp\asyncCall(function () {
+            $this->restarting = true;
             echo "Started: lxc restore {$this->name} default\n";
             $p = new Process("lxc restore {$this->name} default");
             yield $p->start();
             yield $p->join();
             echo "Finished: lxc restore {$this->name} default\n";
             $this->busy = false;
+            $this->restarting = false;
         });
         //server is already started after restore, though this could be due to how state was saved
     }
 
     function timedOut() {
+        echo "{$this->name} has timed out\n";
         $this->out[] = "Timeout reached";
         $this->timeout = null;
-        $this->finish();
+        $this->restart();
     }
 
     /**
@@ -112,37 +118,34 @@ class Container
     {
         $this->busy = true;
         echo "{$this->name} starting php code run\n";
-        $file = __DIR__ . '/code.php';
+        $file = __DIR__ . "/running-{$this->name}.php";
         $code = "<?php\n$code\n";
         file_put_contents($file, $code);
         $this->hostExec("lxc file push $file codesand/home/codesand/");
         $this->rootExec("chown -R codesand:codesand /home/codesand/");
-        return \Amp\call(function () {
-            return yield from $this->runCMD("lxc exec codesand -- su -l codesand -c \"php /home/codesand/code.php ; echo\"");
-        });
+        return $this->runCMD("lxc exec {$this->name} -- su -l codesand -c \"php /home/codesand/running-{$this->name}.php ; echo\"");
     }
 
     /**
      * Runs cmd on container asyncly capturing output for channel
      * @param $cmd
-     * @return \Generator
      */
     function runCMD($cmd) {
-        $this->busy = true;
-        $this->timeout = \Amp\Loop::delay(3000, [$this, 'timedOut']);
-
-        $cmd = "lxc exec codesand -- su -l codesand -c \"php /home/codesand/code.php ; echo\"";
-        echo "launching Process with: $cmd\n";
-        $this->proc = new Process($cmd);
-        yield $this->proc->start();
-        \Amp\asyncCall([$this, 'getStdout']);
-        \Amp\asyncCall([$this, 'getStderr']);
-        echo "joining proc\n";
-        yield $this->proc->join();
-        echo "joined proc\n";
-        $out = $this->out;
-        $this->finish();
-        return $out;
+        return \Amp\call(function () use ($cmd) {
+            $this->busy = true;
+            $this->timeout = \Amp\Loop::delay(5000, [$this, 'timedOut']);
+            echo "launching Process with: $cmd\n";
+            $this->proc = new Process($cmd);
+            yield $this->proc->start();
+            \Amp\asyncCall([$this, 'getStdout']);
+            \Amp\asyncCall([$this, 'getStderr']);
+            echo "{$this->name} runCMD joining proc\n";
+            yield $this->proc->join();
+            echo "{$this->name} runCMD joined proc\n";
+            $out = $this->out;
+            $this->finish();
+            return $out;
+        });
     }
 
     function getStdout() {

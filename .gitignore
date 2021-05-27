@@ -3,3 +3,4 @@
 vendor
 keys.yaml
 container.list
+running-*
