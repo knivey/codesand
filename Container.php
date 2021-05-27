@@ -152,6 +152,8 @@ class Container
         $stream = $this->proc->getStdout();
         $lr = new SafeLineReader($stream);
         while ($this->timeout != null && null !== $line = yield $lr->readLine()) {
+            if(trim($line) == '')
+                continue;
             $this->out[] = "OUT: $line";
             if (strlen(implode(' ', $this->out)) > 4000) {
                 break;
@@ -163,6 +165,8 @@ class Container
         $stream = $this->proc->getStderr();
         $lr = new SafeLineReader($stream);
         while ($this->timeout != null && null !== $line = yield $lr->readLine()) {
+            if(trim($line) == '')
+                continue;
             $this->out[] = "ERR: $line";
             if (strlen(implode(' ', $this->out)) > 4000) {
                 break;
