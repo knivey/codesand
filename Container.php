@@ -137,13 +137,17 @@ class Container
             $this->busy = true;
             $this->timeout = \Amp\Loop::delay(5000, [$this, 'timedOut']);
             echo "launching Process with: $cmd\n";
-            $this->proc = new Process($cmd);
-            yield $this->proc->start();
-            \Amp\asyncCall([$this, 'getStdout']);
-            \Amp\asyncCall([$this, 'getStderr']);
-            echo "{$this->name} runCMD joining proc\n";
-            yield $this->proc->join();
-            echo "{$this->name} runCMD joined proc\n";
+            try {
+                $this->proc = new Process($cmd);
+                yield $this->proc->start();
+                \Amp\asyncCall([$this, 'getStdout']);
+                \Amp\asyncCall([$this, 'getStderr']);
+                echo "{$this->name} runCMD joining proc\n";
+                yield $this->proc->join();
+                echo "{$this->name} runCMD joined proc\n";
+            } catch (\Amp\Process\ProcessException $e) {
+                $this->out[] = "Exception: " . $e->getMessage();
+            }
             $out = $this->out;
             $this->finish();
             return $out;
