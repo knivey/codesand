@@ -121,7 +121,7 @@ class Container
         $file = __DIR__ . "/running-{$this->name}.php";
         $code = "<?php\n$code\n";
         file_put_contents($file, $code);
-        $this->hostExec("lxc file push $file codesand/home/codesand/");
+        $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
         $this->rootExec("chown -R codesand:codesand /home/codesand/");
         return $this->runCMD("lxc exec {$this->name} -- su -l codesand -c \"php /home/codesand/running-{$this->name}.php ; echo\"");
     }
