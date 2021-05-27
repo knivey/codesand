@@ -100,6 +100,8 @@ class Container
             $this->restarting = false;
         });
         //server is already started after restore, though this could be due to how state was saved
+        //correction: sometimes it is sometimes its not???
+        $this->hostExec("lxc start {$this->name}");
     }
 
     function timedOut() {
