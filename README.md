@@ -44,7 +44,10 @@ lxc config set codesand boot.autostart=true
 lxc profile copy default codesand
 lxc profile edit codesand
 ```
-Make it look like this adjust values to your liking
+Make it look like this adjust values to your liking.
+The limits help stop abusive code from hogging machine.
+
+*Notice I commented the network device*
 ```
 config:
   limits.cpu.allowance: 80%
@@ -52,6 +55,11 @@ config:
   limits.processes: "200"
 description: Default codesand LXD profile
 devices:
+#just comment incase want to enable again
+#  eth0:
+#    name: eth0
+#    network: lxdbr0
+#    type: nic
   root:
     path: /
     pool: default
@@ -59,7 +67,7 @@ devices:
 name: codesand
 used_by: []
 ```
-*Notice I removed the network device*
+Assign the modified profile to the container and make a snapshot so it can be reset to this state after code runs.
 
 ```bash
 lxc profile assign codesand codesand
@@ -75,34 +83,15 @@ usermod -a -G lxd USERNAME
 I recommend making at least a few container copies and the script will rotate them. It takes several seconds for a container to reset and restart.
 
 ```bash
-lxc copy codesand codesand1
-lxc copy codesand codesand2
-lxc copy codesand codesand3
-lxc copy codesand codesand4
-lxc copy codesand codesand5
-
-lxc start codesand1
-lxc start codesand2
-lxc start codesand3
-lxc start codesand4
-lxc start codesand5
-```
-
-Put inside the container.list in codesand script dir so we knows the names of containers to use
-```txt
-codesand1
-codesand2
-codesand3
-codesand4
-codesand5
+./makeContainers.php 10
+./startAllContaiers.php
 ```
 
 ### Other thoughts
 Using lxd the containers are already ran unprivileged.
 
-One limitation is we're only going to be able to run one code snippet at a time.
 
-Basically the script will do as follows:
+Basically the execution process will do as follows:
 * copy code to a file on instance
   ```
   lxc file push test.php codesand/home/codesand/
@@ -117,7 +106,6 @@ Basically the script will do as follows:
   lxc restore codesand default
   ```
   seems to take about 10 seconds?
-* send output to irc (with restrictions)
 
 
 ###Things to consider:

@@ -7,6 +7,8 @@ class Container
 {
     public ?string $timeout;
     public bool $busy = false;
+    protected ?Process $proc = null;
+    public array $out = [];
 
     public function __construct(public string $name)
     {
@@ -83,28 +85,41 @@ class Container
     function restart() {
         //During testing with forkbombs etc normal kill methods did not work well and took forever
         $this->rootExec("killall -9 -u codesand");
-        //restore seems to stop anythign running
-        //verboseExec("lxc stop {$this->name}");
-        //TODO do this async, runs long time
-        $this->hostExec("lxc restore {$this->name} default");
-        //server is started after restore, though this could be due to how state was saved
-        //verboseExec("lxc start {$this->name}");
+        //restore will stop anything running but without that kill can take very long
+        \Amp\asyncCall(function () {
+            echo "Started: lxc restore {$this->name} default\n";
+            $p = new Process("lxc restore {$this->name} default");
+            yield $p->start();
+            yield $p->join();
+            echo "Finished: lxc restore {$this->name} default\n";
+            $this->busy = false;
+        });
+        //server is already started after restore, though this could be due to how state was saved
+    }
+
+    function timedOut() {
+        $this->out[] = "Timeout reached";
+        $this->timeout = null;
+        $this->finish();
     }
 
     /**
      * Runs PHP code
      * @param string $code
-     * @return \Generator
+     * @return \Amp\Promise
      */
     function runPHP(string $code)
     {
+        $this->busy = true;
         echo "{$this->name} starting php code run\n";
         $file = __DIR__ . '/code.php';
         $code = "<?php\n$code\n";
         file_put_contents($file, $code);
         $this->hostExec("lxc file push $file codesand/home/codesand/");
         $this->rootExec("chown -R codesand:codesand /home/codesand/");
-        yield from $this->runCMD("lxc exec codesand -- su -l codesand -c \"php /home/codesand/code.php ; echo\"");
+        return \Amp\call(function () {
+            return yield from $this->runCMD("lxc exec codesand -- su -l codesand -c \"php /home/codesand/code.php ; echo\"");
+        });
     }
 
     /**
@@ -113,6 +128,7 @@ class Container
      * @return \Generator
      */
     function runCMD($cmd) {
+        $this->busy = true;
         $this->timeout = \Amp\Loop::delay(3000, [$this, 'timedOut']);
 
         $cmd = "lxc exec codesand -- su -l codesand -c \"php /home/codesand/code.php ; echo\"";
@@ -124,24 +140,41 @@ class Container
         echo "joining proc\n";
         yield $this->proc->join();
         echo "joined proc\n";
+        $out = $this->out;
         $this->finish();
+        return $out;
     }
 
-    public $finished = false;
-    function finish() {
-        global $running;
-        if($this->finished == true) {
-            return;
+    function getStdout() {
+        $stream = $this->proc->getStdout();
+        $lr = new SafeLineReader($stream);
+        while ($this->timeout != null && null !== $line = yield $lr->readLine()) {
+            $this->out[] = "OUT: $line";
+            if (strlen(implode(' ', $this->out)) > 4000) {
+                break;
+            }
         }
+    }
+
+    function getStderr() {
+        $stream = $this->proc->getStderr();
+        $lr = new SafeLineReader($stream);
+        while ($this->timeout != null && null !== $line = yield $lr->readLine()) {
+            $this->out[] = "ERR: $line";
+            if (strlen(implode(' ', $this->out)) > 4000) {
+                break;
+            }
+        }
+    }
+
+    function finish() {
+        $this->out = [];
+
         if($this->timeout != null) {
             \Amp\Loop::cancel($this->timeout);
             $this->timeout = null;
         }
-        $this->finished = true;
 
-        restart();
-
-        $this->pushout($this->out);
-        $running = null;
+        $this->restart();
     }
 }

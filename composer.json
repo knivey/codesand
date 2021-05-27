@@ -20,6 +20,7 @@
     "monolog/monolog": "^2.2",
     "amphp/log": "^1.1",
     "ext-pcntl": "*",
-    "symfony/yaml": "^5.2"
+    "symfony/yaml": "^5.2",
+    "ext-json": "*"
   }
 }
