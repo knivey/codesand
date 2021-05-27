@@ -50,9 +50,9 @@ The limits help stop abusive code from hogging machine.
 *Notice I commented the network device*
 ```
 config:
-  limits.cpu.allowance: 80%
-  limits.memory: 500MiB
-  limits.processes: "200"
+  limits.cpu.allowance: 10%
+  limits.memory: 80MiB
+  limits.processes: "50"
 description: Default codesand LXD profile
 devices:
 #just comment incase want to enable again
