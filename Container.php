@@ -158,6 +158,7 @@ class Container
             if(count($this->out) > 10) {
                 $this->out[] = "max lines reached";
                 $this->restart();
+                break;
             }
             if (strlen(implode(' ', $this->out)) > 4000) {
                 break;
@@ -175,6 +176,7 @@ class Container
             if(count($this->out) > 10) {
                 $this->out[] = "max lines reached";
                 $this->restart();
+                break;
             }
             if (strlen(implode(' ', $this->out)) > 4000) {
                 break;
