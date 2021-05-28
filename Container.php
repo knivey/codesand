@@ -87,6 +87,7 @@ class Container
         if($this->restarting)
             return;
         //During testing with forkbombs etc normal kill methods did not work well and took forever
+        //An alternative to this could be lxc stop {$this->>name} --timeout 1 --force
         $this->rootExec("killall -9 -u codesand");
         //restore will stop anything running but without that kill can take very long
         \Amp\asyncCall(function () {

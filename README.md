@@ -47,6 +47,8 @@ lxc profile edit codesand
 Make it look like this adjust values to your liking.
 The limits help stop abusive code from hogging machine.
 
+The config options are explained here: https://linuxcontainers.org/lxd/docs/master/instances#keyvalue-configuration
+
 *Notice I commented the network device*
 ```
 config:
