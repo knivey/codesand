@@ -151,6 +151,10 @@ class Container
                 try {
                     yield \Amp\Promise\timeout($this->proc->join(), 5000);
                     echo "{$this->name} runCMD joined proc\n";
+                    json_encode($this->out);
+                    if(json_last_error() != 0) {
+                        $this->out = [json_last_error_msg()];
+                    }
                 } catch (\Amp\TimeoutException $e) {
                     json_encode($this->out);
                     if(json_last_error() != 0) {
