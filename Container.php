@@ -85,25 +85,26 @@ class Container
     function restart() {
         if($this->restarting)
             return;
-        //During testing with forkbombs etc normal kill methods did not work well and took forever
-        //An alternative to this could be lxc stop {$this->>name} --timeout 1 --force
-        $this->rootExec("killall -9 -u codesand");
-        //restore will stop anything running but without that kill can take very long
+
+        //restore will stop anything running but without the kill -9 can take very long
         \Amp\asyncCall(function () {
             $this->restarting = true;
-            echo "Started: lxc restore {$this->name} default\n";
-            $p = new Process("lxc restore {$this->name} default");
-            yield $p->start();
-            yield $p->join();
-            echo "Finished: lxc restore {$this->name} default\n";
+            $run = function($cmd) {
+                echo "Started: $cmd\n";
+                $p = new Process($cmd);
+                yield $p->start();
+                yield $p->join();
+                echo "Finished: $cmd\n";
+            };
+            //During testing with forkbombs etc normal kill methods did not work well and took forever
+            //An alternative to this could be lxc stop {$this->>name} --timeout 1 --force
+            yield from $run("killall -9 -u codesand");
+            yield from $run("lxc restore {$this->name} default");
             $this->busy = false;
             $this->restarting = false;
             //sometimes will have Killed ir ERR if timed out
             $this->out = [];
         });
-        //server is already started after restore, though this could be due to how state was saved
-        //correction: sometimes it is sometimes its not???
-        $this->hostExec("lxc start {$this->name}");
     }
 
     /**
@@ -155,6 +156,7 @@ class Container
                         $this->out = [json_last_error_msg()];
                     }
                 } catch (\Amp\TimeoutException $e) {
+                    //$this->proc->kill();
                     if(json_encode($this->out) === false) {
                         $this->out = [json_last_error_msg()];
                     }
