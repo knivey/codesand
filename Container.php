@@ -5,7 +5,6 @@ use Amp\Process\Process;
 
 class Container
 {
-    public ?string $timeout;
     public bool $busy = false;
     protected ?Process $proc = null;
     public array $out = [];
@@ -99,17 +98,12 @@ class Container
             echo "Finished: lxc restore {$this->name} default\n";
             $this->busy = false;
             $this->restarting = false;
+            //sometimes will have Killed ir ERR if timed out
+            $this->out = [];
         });
         //server is already started after restore, though this could be due to how state was saved
         //correction: sometimes it is sometimes its not???
         $this->hostExec("lxc start {$this->name}");
-    }
-
-    function timedOut() {
-        echo "{$this->name} has timed out\n";
-        $this->out[] = "Timeout reached";
-        $this->timeout = null;
-        $this->restart();
     }
 
     /**
@@ -147,7 +141,6 @@ class Container
     function runCMD($cmd) {
         return \Amp\call(function () use ($cmd) {
             $this->busy = true;
-            $this->timeout = \Amp\Loop::delay(5000, [$this, 'timedOut']);
             echo "launching Process with: $cmd\n";
             try {
                 $this->proc = new Process($cmd);
@@ -155,8 +148,17 @@ class Container
                 \Amp\asyncCall([$this, 'getStdout']);
                 \Amp\asyncCall([$this, 'getStderr']);
                 echo "{$this->name} runCMD joining proc\n";
-                yield $this->proc->join();
-                echo "{$this->name} runCMD joined proc\n";
+                try {
+                    yield \Amp\Promise\timeout($this->proc->join(), 5000);
+                    echo "{$this->name} runCMD joined proc\n";
+                } catch (\Amp\TimeoutException $e) {
+                    json_encode($this->out);
+                    if(json_last_error() != 0) {
+                        $this->out = [json_last_error_msg()];
+                    }
+                    $this->out[] = "timeout reached";
+                    echo "{$this->name} runCMD timed out\n";
+                }
             } catch (\Amp\Process\ProcessException $e) {
                 $this->out[] = "Exception: " . $e->getMessage();
             }
@@ -169,7 +171,7 @@ class Container
     function getStdout() {
         $stream = $this->proc->getStdout();
         $lr = new SafeLineReader($stream);
-        while ($this->timeout != null && null !== $line = yield $lr->readLine()) {
+        while (!$this->restarting && null !== $line = yield $lr->readLine()) {
             if(trim($line) == '')
                 continue;
             $this->out[] = "OUT: $line";
@@ -186,7 +188,7 @@ class Container
     function getStderr() {
         $stream = $this->proc->getStderr();
         $lr = new SafeLineReader($stream);
-        while ($this->timeout != null && null !== $line = yield $lr->readLine()) {
+        while (!$this->restarting && null !== $line = yield $lr->readLine()) {
             if(trim($line) == '')
                 continue;
             $this->out[] = "ERR: $line";
@@ -202,12 +204,6 @@ class Container
 
     function finish() {
         $this->out = [];
-
-        if($this->timeout != null) {
-            \Amp\Loop::cancel($this->timeout);
-            $this->timeout = null;
-        }
-
         $this->restart();
     }
 }
