@@ -53,6 +53,7 @@ config:
   limits.cpu.allowance: 10%
   limits.memory: 80MiB
   limits.processes: "50"
+  limits.cpu.priority: "10"
 description: Default codesand LXD profile
 devices:
 #just comment incase want to enable again
@@ -63,6 +64,7 @@ devices:
   root:
     path: /
     pool: default
+    size: 2GB
     type: disk
 name: codesand
 used_by: []
