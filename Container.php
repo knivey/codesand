@@ -26,7 +26,7 @@ class Container
         //Hopefully this helps leave the containers in a clean state
         //But that wont always be the case if bot dies while running something
         if($this->busy) {
-            // TODO Cancel any amp watchers etc
+            // TODO Cancel any amp watchers etc, block for restart to finish?
             $this->restart();
         }
     }
@@ -175,7 +175,6 @@ class Container
             $this->out[] = "OUT: $line";
             if(count($this->out) > 10) {
                 $this->out[] = "max lines reached";
-                $this->restart();
                 break;
             }
             if (strlen(implode(' ', $this->out)) > 4000) {
@@ -193,7 +192,6 @@ class Container
             $this->out[] = "ERR: $line";
             if(count($this->out) > 10) {
                 $this->out[] = "max lines reached";
-                $this->restart();
                 break;
             }
             if (strlen(implode(' ', $this->out)) > 4000) {
