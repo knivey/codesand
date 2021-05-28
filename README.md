@@ -50,6 +50,8 @@ The limits help stop abusive code from hogging machine.
 The config options are explained here: https://linuxcontainers.org/lxd/docs/master/instances#keyvalue-configuration
 
 *Notice I commented the network device*
+
+The disk IO limit is rather untrustworthy and probably wont work at all with zfs. Due to caching you can write zeros way past the limit.. `cat /dev/zero > ~/zero` will still cause my whole server to grind down with this config.
 ```
 config:
   limits.cpu.allowance: 10%
@@ -67,6 +69,7 @@ devices:
     path: /
     pool: default
     size: 2GB
+    limits.max: 10MB
     type: disk
 name: codesand
 used_by: []
