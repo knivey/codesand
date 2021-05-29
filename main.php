@@ -101,6 +101,28 @@ Amp\Loop::run(function () {
         return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
     }));
 
+    $router->addRoute('POST', '/run/python3', new CallableRequestHandler(function (Request $request) {
+        $code = yield $request->getBody()->buffer();
+        if(!$cont = getContainer()) {
+            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
+                'All containers are busy try later');
+        }
+        $reply = yield $cont->runPy3($code);
+        $reply = json_encode($reply);
+        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
+    }));
+
+    $router->addRoute('POST', '/run/python2', new CallableRequestHandler(function (Request $request) {
+        $code = yield $request->getBody()->buffer();
+        if(!$cont = getContainer()) {
+            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
+                'All containers are busy try later');
+        }
+        $reply = yield $cont->runPy2($code);
+        $reply = json_encode($reply);
+        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
+    }));
+
     $server = new Server($servers, $router, $logger);
     yield $server->start();
 

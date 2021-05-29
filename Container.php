@@ -107,6 +107,16 @@ class Container
         });
     }
 
+    function sendFile($name, $contents)
+    {
+        $fname = "running-{$this->name}-{$name}";
+        $file = __DIR__ . "/$fname";
+        file_put_contents($file, $contents);
+        $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
+        $this->rootExec("chown -R codesand:codesand /home/codesand/");
+        return $fname;
+    }
+
     /**
      * Runs PHP code
      * @param string $code
@@ -116,23 +126,32 @@ class Container
     {
         $this->busy = true;
         echo "{$this->name} starting php code run\n";
-        $file = __DIR__ . "/running-{$this->name}.php";
-        $code = "<?php\n$code\n";
-        file_put_contents($file, $code);
-        $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
-        $this->rootExec("chown -R codesand:codesand /home/codesand/");
-        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"php /home/codesand/running-{$this->name}.php ; echo\"");
+        $fname = $this->sendFile("code.php", "<?php\n$code\n");
+        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"php /home/codesand/$fname ; echo\"");
     }
 
     function runBash(string $code)
     {
         $this->busy = true;
         echo "{$this->name} starting bash code run\n";
-        $file = __DIR__ . "/running-{$this->name}.sh";
-        file_put_contents($file, $code);
-        $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
-        $this->rootExec("chown -R codesand:codesand /home/codesand/");
-        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"/bin/bash /home/codesand/running-{$this->name}.sh ; echo\"");
+        $fname = $this->sendFile('code.sh', $code);
+        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"/bin/bash /home/codesand/$fname ; echo\"");
+    }
+
+    function runPy3(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting python code run\n";
+        $fname = $this->sendFile('code.py', $code);
+        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python3 /home/codesand/$fname ; echo\"");
+    }
+
+    function runPy2(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting python code run\n";
+        $fname = $this->sendFile('code.py', $code);
+        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python2 /home/codesand/$fname ; echo\"");
     }
 
     /**
