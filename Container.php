@@ -98,7 +98,7 @@ class Container
             };
             //During testing with forkbombs etc normal kill methods did not work well and took forever
             //An alternative to this could be lxc stop {$this->>name} --timeout 1 --force
-            yield from $run("killall -9 -u codesand");
+            yield from $run("lxc exec {$this->name} -T -n -- killall -9 -u codesand");
             yield from $run("lxc restore {$this->name} default");
             $this->busy = false;
             $this->restarting = false;
@@ -121,7 +121,7 @@ class Container
         file_put_contents($file, $code);
         $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
         $this->rootExec("chown -R codesand:codesand /home/codesand/");
-        return $this->runCMD("lxc exec {$this->name} -- su -l codesand -c \"php /home/codesand/running-{$this->name}.php ; echo\"");
+        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"php /home/codesand/running-{$this->name}.php ; echo\"");
     }
 
     function runBash(string $code)
@@ -132,7 +132,7 @@ class Container
         file_put_contents($file, $code);
         $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
         $this->rootExec("chown -R codesand:codesand /home/codesand/");
-        return $this->runCMD("lxc exec {$this->name} -- su -l codesand -c \"bash /home/codesand/running-{$this->name}.sh ; echo\"");
+        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"/bin/bash /home/codesand/running-{$this->name}.sh ; echo\"");
     }
 
     /**
