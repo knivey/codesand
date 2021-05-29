@@ -28,7 +28,7 @@ lxc exec codesand -- /bin/bash
 
 ```
 apt update && apt upgrade
-apt install php-cli build-essential python golang
+apt install php-cli build-essential python python3 golang tcc tcl time
 adduser codesand
 ```
 Install anything else you might need for running scripts etc
@@ -54,13 +54,13 @@ The config options are explained here: https://linuxcontainers.org/lxd/docs/mast
 The disk IO limit is rather untrustworthy and probably wont work at all with zfs. Due to caching you can write zeros way past the limit.. `cat /dev/zero > ~/zero` will still cause my whole server to grind down with this config.
 ```
 config:
-  limits.cpu.allowance: 10%
-  limits.memory: 80MiB
+  limits.cpu.allowance: 30%
+  limits.memory: 120MiB
   limits.processes: "50"
   limits.cpu.priority: "0"
 description: Default codesand LXD profile
 devices:
-#just comment incase want to enable again
+# Even lxc will not save your comments so write this down to save
 #  eth0:
 #    name: eth0
 #    network: lxdbr0
@@ -68,8 +68,8 @@ devices:
   root:
     path: /
     pool: default
-    size: 2GB
-    limits.max: 10MB
+    size: 1500MB
+    limits.max: 75MB
     type: disk
 name: codesand
 used_by: []
