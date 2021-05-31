@@ -3,7 +3,7 @@
 It requires LXD to be setup
 
 
-No idea if ive done this the best way but here's the commands I've run to get set up. My system was running Debian GNU/Linux 10 (buster)
+No idea if ive done this the best way but here are the commands I've run to get set up. My system was running Debian GNU/Linux 10 (buster)
 lxd requires snap to be setup.
 
 You can skip much of this if you already have lxc/lxd setup just need the commands to make the container
@@ -28,12 +28,12 @@ lxc exec codesand -- /bin/bash
 
 ```
 apt update && apt upgrade
-apt install php-cli build-essential python python3 golang tcc tcl time
+apt install php-cli build-essential python python3 golang tcc tcl time fish zsh
 adduser codesand
 ```
 Install anything else you might need for running scripts etc
 
-If you need to update or install things on all the containers later there are scripts to do that. 
+If you need to update or install things on all the containers later there are instructions to do that. 
 ```bash
 exit
 ```
@@ -51,7 +51,7 @@ The config options are explained here: https://linuxcontainers.org/lxd/docs/mast
 
 *Notice I commented the network device*
 
-The disk IO limit is rather untrustworthy and probably wont work at all with zfs. Due to caching you can write zeros way past the limit.. `cat /dev/zero > ~/zero` will still cause my whole server to grind down with this config.
+The disk IO limit is rather untrustworthy and probably won't work at all with zfs. Due to caching you can write zeros way past the limit.. `cat /dev/zero > ~/zero` will still cause my whole server to grind down with this config.
 ```
 config:
   limits.cpu.allowance: 30%
@@ -74,7 +74,7 @@ devices:
 name: codesand
 used_by: []
 ```
-Assign the modified profile to the container and make a snapshot so it can be reset to this state after code runs.
+Assign the modified profile to the container and make a snapshot so that it can be reset to this state after code runs.
 
 ```bash
 lxc profile assign codesand codesand
@@ -87,12 +87,34 @@ usermod -a -G lxd USERNAME
 ```
 
 ### Setup "pool" of containers
-I recommend making at least a few container copies and the script will rotate them. It takes several seconds for a container to reset and restart.
+Make at least a few containers, when one is busy we go down the list to find one to use. It takes several seconds for a container to reset and restart and become non-busy.
 
 ```bash
 ./makeContainers.php 10
 ./startAllContaiers.php
 ```
+
+### Installing packages and updates later
+Switch the codesand container to the default profile (we shouldn't be using it for any api calls so no need to stop server yet)
+```bash
+lxc profile assign codesand default
+```
+Enter the container to install packages or updates then exit
+```bash
+lxc exec codesand -- /bin/bash
+```
+Reassign the limited codesand profile
+```bash
+lxc profile assign codesand codesand
+```
+You will need to shutdown the api server during the next part.
+
+Delete all containers in the pool and then remake them from the updated codesand
+```bash
+lxc delete $(cat container.list) --force
+./makeContainers 10
+```
+Then you may start the server again
 
 ### Other thoughts
 Using lxd the containers are already ran unprivileged.
@@ -118,7 +140,7 @@ Basically the execution process will do as follows:
 ###Things to consider:
 * Timeout on execution
   * Instance root will killall -u codesand after time is up
-  * timeout command wont work with forkbombs, we will need to 
+  * timeout command won't work with forkbombs, we will need to 
   * Want to be able to show in channel reply that it timed out.
 * How OOM and forkbomb etc gets handled
   * Forkbombs I think will be handled ok with timeout and default ulimits
