@@ -103,9 +103,11 @@ Enter the container to install packages or updates then exit
 ```bash
 lxc exec codesand -- /bin/bash
 ```
-Reassign the limited codesand profile
+Reassign the limited codesand profile and update snapshot
 ```bash
 lxc profile assign codesand codesand
+lxc restart codesand
+lxc snapshot codesand default --reuse
 ```
 You will need to shutdown the api server during the next part.
 
