@@ -101,6 +101,17 @@ Amp\Loop::run(function () {
         return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
     }));
 
+    $router->addRoute('POST', '/run/fish', new CallableRequestHandler(function (Request $request) {
+        $code = yield $request->getBody()->buffer();
+        if(!$cont = getContainer()) {
+            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
+                'All containers are busy try later');
+        }
+        $reply = yield $cont->runFish($code);
+        $reply = json_encode($reply);
+        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
+    }));
+
     $router->addRoute('POST', '/run/python3', new CallableRequestHandler(function (Request $request) {
         $code = yield $request->getBody()->buffer();
         if(!$cont = getContainer()) {

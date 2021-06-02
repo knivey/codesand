@@ -162,6 +162,16 @@ class Container
         });
     }
 
+    function runFish(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting fish code run\n";
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.fish', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/fish /home/codesand/$fname");
+        });
+    }
+
     function runPy3(string $code)
     {
         $this->busy = true;
