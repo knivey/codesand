@@ -148,9 +148,11 @@ class Container
         echo "{$this->name} starting php code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile("code.php", "<?php\n$code\n");
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"php /home/codesand/$fname ; echo\"");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- php /home/codesand/$fname ; echo");
         });
     }
+
+    //TODO We follow commands with an echo in case there was output without a newline, would be nice to not do this
 
     function runBash(string $code)
     {
@@ -158,7 +160,7 @@ class Container
         echo "{$this->name} starting bash code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.sh', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"/bin/bash /home/codesand/$fname ; echo\"");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash /home/codesand/$fname ; echo");
         });
     }
 
@@ -168,7 +170,7 @@ class Container
         echo "{$this->name} starting fish code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.fish', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/fish /home/codesand/$fname");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/fish /home/codesand/$fname ; echo");
         });
     }
 
@@ -178,7 +180,7 @@ class Container
         echo "{$this->name} starting python code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python3 /home/codesand/$fname ; echo\"");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python3 /home/codesand/$fname ; echo");
         });
     }
 
@@ -188,7 +190,7 @@ class Container
         echo "{$this->name} starting python code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python2 /home/codesand/$fname ; echo\"");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python2 /home/codesand/$fname");
         });
     }
 
