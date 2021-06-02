@@ -1,6 +1,7 @@
 <?php
 namespace codesand;
 
+use Amp\ByteStream\LineReader;
 use Amp\Process\Process;
 
 class Container
@@ -47,38 +48,60 @@ class Container
     /**
      * Execute command as root on container
      * @param $exec don't send anything that exits quotes
-     * @return string output from exec
      */
     function rootExec($exec) {
-        echo " {$this->name} root$ $exec\n";
-        $r = null;
-        exec("lxc exec {$this->name} -- $exec", $r);
-        return implode("\n", $r);
+        return \Amp\call(function () use ($exec) {
+            echo " {$this->name} root$ $exec\n";
+            $out = yield $this->asyncExec("lxc exec {$this->name} -T -n -- $exec");
+            return implode("\n", $out);
+        });
     }
 
     /**
      * Execute command as our user on container
-     * @param $exec don't send anything that exits quotes
-     * @return string output from exec
      */
     function userExec($exec) {
-        echo " {$this->name} user$ $exec\n";
-        //$exec = escapeshellarg($exec);
-        $r = null;
-        exec("lxc exec {$this->name} -- su -l codesand -c \"$exec\"", $r);
-        return implode("\n", $r);
+        return \Amp\call(function () use ($exec) {
+            echo " {$this->name} user$ $exec\n";
+            $out = yield $this->asyncExec("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- $exec");
+            return implode("\n", $out);
+        });
+    }
+
+    function asyncExec($cmd) {
+        return \Amp\call(function () use ($cmd) {
+            $p = new Process($cmd);
+            yield $p->start();
+            $out = [];
+            \Amp\asyncCall(function () use (&$out, $p) {
+                $stream = $p->getStdout();
+                yield from $this->lineSuck($stream, $out);
+            });
+            \Amp\asyncCall(function () use (&$out, $p) {
+                $stream = $p->getStderr();
+                yield from $this->lineSuck($stream, $out);
+            });
+            yield $p->join();
+            return $out;
+        });
+    }
+
+    function lineSuck($stream, &$out) {
+        $lr = new LineReader($stream);
+        while (null !== $line = yield $lr->readLine()) {
+            $out[] = $line;
+        }
     }
 
     /**
      * Execute command on host
-     * @param $exec don't send anything that exits quotes
-     * @return string output from exec
      */
     function hostExec($exec) {
-        echo " {$this->name} host$ $exec\n";
-        $r = null;
-        exec($exec, $r);
-        return implode("\n", $r);
+        return \Amp\call(function () use ($exec) {
+            echo " {$this->name} host$ $exec\n";
+            $out = yield $this->asyncExec($exec);
+            return implode("\n", $out);
+        });
     }
 
     protected $restarting = false;
@@ -89,32 +112,29 @@ class Container
         //restore will stop anything running but without the kill -9 can take very long
         \Amp\asyncCall(function () {
             $this->restarting = true;
-            $run = function($cmd) {
-                echo "Started: $cmd\n";
-                $p = new Process($cmd);
-                yield $p->start();
-                yield $p->join();
-                echo "Finished: $cmd\n";
-            };
             //During testing with forkbombs etc normal kill methods did not work well and took forever
             //An alternative to this could be lxc stop {$this->>name} --timeout 1 --force
-            yield from $run("lxc exec {$this->name} -T -n -- killall -9 -u codesand");
-            yield from $run("lxc restore {$this->name} default");
+            yield $this->rootExec("killall -9 -u codesand");
+            echo "restoring {$this->name}\n";
+            yield $this->asyncExec("lxc restore {$this->name} default");
+            echo "restored {$this->name}\n";
             $this->busy = false;
             $this->restarting = false;
-            //sometimes will have Killed ir ERR if timed out
+            //sometimes will have Killed or ERR if timed out
             $this->out = [];
         });
     }
 
     function sendFile($name, $contents)
     {
-        $fname = "running-{$this->name}-{$name}";
-        $file = __DIR__ . "/$fname";
-        file_put_contents($file, $contents);
-        $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
-        $this->rootExec("chown -R codesand:codesand /home/codesand/");
-        return $fname;
+        return \Amp\call(function() use ($name, $contents) {
+            $fname = "running-{$this->name}-{$name}";
+            $file = __DIR__ . "/$fname";
+            file_put_contents($file, $contents);
+            yield $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
+            yield $this->rootExec("chown -R codesand:codesand /home/codesand/");
+            return $fname;
+        });
     }
 
     /**
@@ -126,32 +146,40 @@ class Container
     {
         $this->busy = true;
         echo "{$this->name} starting php code run\n";
-        $fname = $this->sendFile("code.php", "<?php\n$code\n");
-        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"php /home/codesand/$fname ; echo\"");
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile("code.php", "<?php\n$code\n");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"php /home/codesand/$fname ; echo\"");
+        });
     }
 
     function runBash(string $code)
     {
         $this->busy = true;
         echo "{$this->name} starting bash code run\n";
-        $fname = $this->sendFile('code.sh', $code);
-        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"/bin/bash /home/codesand/$fname ; echo\"");
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.sh', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"/bin/bash /home/codesand/$fname ; echo\"");
+        });
     }
 
     function runPy3(string $code)
     {
         $this->busy = true;
         echo "{$this->name} starting python code run\n";
-        $fname = $this->sendFile('code.py', $code);
-        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python3 /home/codesand/$fname ; echo\"");
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.py', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python3 /home/codesand/$fname ; echo\"");
+        });
     }
 
     function runPy2(string $code)
     {
         $this->busy = true;
         echo "{$this->name} starting python code run\n";
-        $fname = $this->sendFile('code.py', $code);
-        return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python2 /home/codesand/$fname ; echo\"");
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.py', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -c \"python2 /home/codesand/$fname ; echo\"");
+        });
     }
 
     /**
