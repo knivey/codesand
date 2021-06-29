@@ -9,6 +9,7 @@ class Container
     public bool $busy = false;
     protected ?Process $proc = null;
     public array $out = [];
+    public int $maxlines = 10;
 
     public function __construct(public string $name)
     {
@@ -91,6 +92,10 @@ class Container
         while (null !== $line = yield $lr->readLine()) {
             $out[] = $line;
         }
+    }
+
+    function setMaxLines(int $num) {
+        $this->maxlines = $num;
     }
 
     /**
@@ -238,7 +243,7 @@ class Container
             if(trim($line) == '')
                 continue;
             $this->out[] = "OUT: $line";
-            if(count($this->out) > 10) {
+            if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
                 break;
             }
@@ -255,7 +260,7 @@ class Container
             if(trim($line) == '')
                 continue;
             $this->out[] = "ERR: $line";
-            if(count($this->out) > 10) {
+            if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
                 break;
             }
