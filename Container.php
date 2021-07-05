@@ -195,7 +195,7 @@ class Container
         echo "{$this->name} starting python code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python2 /home/codesand/$fname");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python2 /home/codesand/$fname ; echo");
         });
     }
 
