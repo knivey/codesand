@@ -199,6 +199,18 @@ class Container
         });
     }
 
+    function runTcc(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting tcc code run\n";
+        return \Amp\call(function () use ($code) {
+            // probably not needed but might be nice to have
+            $code = str_replace('\n', "\n", $code);
+            $fname = yield $this->sendFile('code.c', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcc -run /home/codesand/$fname ; echo");
+        });
+    }
+
     /**
      * Runs cmd on container asyncly capturing output for channel
      * @param $cmd
