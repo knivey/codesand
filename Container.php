@@ -9,6 +9,7 @@ class Container
     public bool $busy = false;
     protected ?Process $proc = null;
     public array $out = [];
+    public int $maxlines = 10;
 
     public function __construct(public string $name)
     {
@@ -91,6 +92,10 @@ class Container
         while (null !== $line = yield $lr->readLine()) {
             $out[] = $line;
         }
+    }
+
+    function setMaxLines(int $num) {
+        $this->maxlines = $num;
     }
 
     /**
@@ -190,7 +195,19 @@ class Container
         echo "{$this->name} starting python code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python2 /home/codesand/$fname");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python2 /home/codesand/$fname ; echo");
+        });
+    }
+
+    function runTcc(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting tcc code run\n";
+        return \Amp\call(function () use ($code) {
+            // probably not needed but might be nice to have
+            $code = str_replace('\n', "\n", $code);
+            $fname = yield $this->sendFile('code.c', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcc -run /home/codesand/$fname ; echo");
         });
     }
 
@@ -238,7 +255,7 @@ class Container
             if(trim($line) == '')
                 continue;
             $this->out[] = "OUT: $line";
-            if(count($this->out) > 10) {
+            if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
                 break;
             }
@@ -255,7 +272,7 @@ class Container
             if(trim($line) == '')
                 continue;
             $this->out[] = "ERR: $line";
-            if(count($this->out) > 10) {
+            if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
                 break;
             }
