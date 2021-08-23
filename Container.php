@@ -13,11 +13,11 @@ class Container
 
     public function __construct(public string $name)
     {
-        if($this->getStatus() != "Running") {
+        if(strtolower($this->getStatus()) != "running") {
             echo "Container $name is not running attempting to start it...\n";
             passthru("lxc start $name");
         }
-        if($this->getStatus() != "Running") {
+        if(strtolower($this->getStatus()) != "running") {
             die("Container $name still is not running?? status: ".$this->getStatus()."\n");
         }
     }
