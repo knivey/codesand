@@ -259,7 +259,7 @@ class Container
                 $this->out[] = "max lines reached";
                 break;
             }
-            if (strlen(implode(' ', $this->out)) > 4000) {
+            if (strlen(implode(' ', $this->out)) > 40000) {
                 break;
             }
         }
@@ -276,7 +276,7 @@ class Container
                 $this->out[] = "max lines reached";
                 break;
             }
-            if (strlen(implode(' ', $this->out)) > 4000) {
+            if (strlen(implode(' ', $this->out)) > 40000) {
                 break;
             }
         }
