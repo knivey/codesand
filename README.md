@@ -28,8 +28,9 @@ lxc exec codesand -- /bin/bash
 
 ```
 apt update && apt upgrade
-apt install php-cli build-essential python python3 golang tcc tcl time fish zsh
+apt install php-cli build-essential python python3 golang tcc tcl time fish zsh toilet figlet
 adduser codesand
+adduser codesand games
 ```
 Install anything else you might need for running scripts etc
 

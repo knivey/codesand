@@ -51,16 +51,6 @@ function getContainer() {
     return false;
 }
 
-function parseQuery($v) {
-    $v = explode("&", $v);
-    $vars = [];
-    foreach ($v as $var) {
-        @list($key, $val) = explode("=", $var);
-        @$vars[urldecode($key)] = urldecode($val);
-    }
-    return $vars;
-}
-
 Amp\Loop::run(function () {
     global $config;
     $servers = [];
@@ -95,7 +85,7 @@ Amp\Loop::run(function () {
             return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
                 'All containers are busy try later');
         }
-        $v = parseQuery($request->getUri()->getQuery());
+        parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $reply = yield $cont->runPHP($code);
         $reply = json_encode($reply);
@@ -108,7 +98,7 @@ Amp\Loop::run(function () {
             return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
                 'All containers are busy try later');
         }
-        $v = parseQuery($request->getUri()->getQuery());
+        parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $reply = yield $cont->runBash($code);
         $reply = json_encode($reply);
@@ -121,7 +111,7 @@ Amp\Loop::run(function () {
             return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
                 'All containers are busy try later');
         }
-        $v = parseQuery($request->getUri()->getQuery());
+        parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $reply = yield $cont->runFish($code);
         $reply = json_encode($reply);
@@ -134,7 +124,7 @@ Amp\Loop::run(function () {
             return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
                 'All containers are busy try later');
         }
-        $v = parseQuery($request->getUri()->getQuery());
+        parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $reply = yield $cont->runPy3($code);
         $reply = json_encode($reply);
@@ -147,7 +137,7 @@ Amp\Loop::run(function () {
             return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
                 'All containers are busy try later');
         }
-        $v = parseQuery($request->getUri()->getQuery());
+        parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $reply = yield $cont->runPy2($code);
         $reply = json_encode($reply);
@@ -160,7 +150,7 @@ Amp\Loop::run(function () {
             return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
                 'All containers are busy try later');
         }
-        $v = parseQuery($request->getUri()->getQuery());
+        parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $reply = yield $cont->runTcc($code);
         $reply = json_encode($reply);
