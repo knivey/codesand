@@ -79,7 +79,7 @@ Amp\Loop::run(function () {
         return new Response(Status::OK, ['content-type' => 'text/plain'], "Hello, {$args['name']}!");
     }));
 
-    $router->addRoute('POST', '/run/php', new CallableRequestHandler(function (Request $request) {
+    $router->addRoute('POST', '/run/{runner}', new CallableRequestHandler(function (Request $request) {
         $code = yield $request->getBody()->buffer();
         if(!$cont = getContainer()) {
             return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
@@ -87,72 +87,36 @@ Amp\Loop::run(function () {
         }
         parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
-        $reply = yield $cont->runPHP($code);
-        $reply = json_encode($reply);
-        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
-    }));
-
-    $router->addRoute('POST', '/run/bash', new CallableRequestHandler(function (Request $request) {
-        $code = yield $request->getBody()->buffer();
-        if(!$cont = getContainer()) {
-            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
-                'All containers are busy try later');
+        $args = $request->getAttribute(Router::class);
+        if(!isset($args['runner'])) { // todo not sure if needed
+            return new Response(Status::BAD_REQUEST, [
+                "content-type" => "text/plain; charset=utf-8"
+            ], "Must specify a runner");
         }
-        parse_str($request->getUri()->getQuery(), $v);
-        $cont->setMaxLines(($v['maxlines'] ?? 10));
-        $reply = yield $cont->runBash($code);
-        $reply = json_encode($reply);
-        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
-    }));
-
-    $router->addRoute('POST', '/run/fish', new CallableRequestHandler(function (Request $request) {
-        $code = yield $request->getBody()->buffer();
-        if(!$cont = getContainer()) {
-            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
-                'All containers are busy try later');
+        switch ($args['runner']) {
+            case 'php':
+                $reply = yield $cont->runPHP($code);
+                break;
+            case 'bash':
+                $reply = yield $cont->runBash($code);
+                break;
+            case 'fish':
+                $reply = yield $cont->runFish($code);
+                break;
+            case 'python3':
+                $reply = yield $cont->runPy3($code);
+                break;
+            case 'python2':
+                $reply = yield $cont->runPy2($code);
+                break;
+            case 'tcc':
+                $reply = yield $cont->runTcc($code);
+                break;
+            default:
+                return new Response(Status::BAD_REQUEST, [
+                    "content-type" => "text/plain; charset=utf-8"
+                ], "Not a valid runner: {$args['runner']}");
         }
-        parse_str($request->getUri()->getQuery(), $v);
-        $cont->setMaxLines(($v['maxlines'] ?? 10));
-        $reply = yield $cont->runFish($code);
-        $reply = json_encode($reply);
-        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
-    }));
-
-    $router->addRoute('POST', '/run/python3', new CallableRequestHandler(function (Request $request) {
-        $code = yield $request->getBody()->buffer();
-        if(!$cont = getContainer()) {
-            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
-                'All containers are busy try later');
-        }
-        parse_str($request->getUri()->getQuery(), $v);
-        $cont->setMaxLines(($v['maxlines'] ?? 10));
-        $reply = yield $cont->runPy3($code);
-        $reply = json_encode($reply);
-        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
-    }));
-
-    $router->addRoute('POST', '/run/python2', new CallableRequestHandler(function (Request $request) {
-        $code = yield $request->getBody()->buffer();
-        if(!$cont = getContainer()) {
-            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
-                'All containers are busy try later');
-        }
-        parse_str($request->getUri()->getQuery(), $v);
-        $cont->setMaxLines(($v['maxlines'] ?? 10));
-        $reply = yield $cont->runPy2($code);
-        $reply = json_encode($reply);
-        return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
-    }));
-
-    $router->addRoute('POST', '/run/tcc', new CallableRequestHandler(function (Request $request) {
-        $code = yield $request->getBody()->buffer();
-        if(!$cont = getContainer()) {
-            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
-                'All containers are busy try later');
-        }
-        parse_str($request->getUri()->getQuery(), $v);
-        $cont->setMaxLines(($v['maxlines'] ?? 10));
-        $reply = yield $cont->runTcc($code);
         $reply = json_encode($reply);
         return new Response(Status::OK, ['content-type' => 'text/plain'], $reply);
     }));
