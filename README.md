@@ -1,4 +1,4 @@
-##This script is to run code snipperts given to the bot on irc channels and display the results.
+## codesand is a rest server using amphp to run code inside containers
 
 It requires LXD to be setup
 
@@ -8,7 +8,7 @@ lxd requires snap to be setup.
 
 You can skip much of this if you already have lxc/lxd setup just need the commands to make the container
 
-###Do the following commands as root
+### Do the following commands as root
 ```bash
 apt install lxc debian-archive-keyring snapd
 snap install core
@@ -29,7 +29,7 @@ lxc launch images:debian/11 codesand
 lxc exec codesand -- /bin/bash
 ```
 
-###Inside the container:
+### Inside the container:
 
 Optional add sury repo for php8:
 ```bash
@@ -54,7 +54,7 @@ If you need to update or install things on all the containers later there are in
 exit
 ```
 
-###Adjust container settings profile
+### Adjust container settings profile
 ```
 lxc config set codesand boot.autostart=true
 lxc profile copy default codesand
@@ -85,7 +85,7 @@ devices:
     path: /
     pool: default
     size: 3000MB
-    limits.max: 75MB
+    limits.max: 200MB
     type: disk
 name: codesand
 used_by: []
@@ -119,6 +119,11 @@ keyname: key
 keyname2: key2
 ```
 etc...
+
+### Running server
+Make sure ```config.yaml``` is setup with where you would like to listen for connections
+
+then just run ```main.php```
 
 ### LXC and cgroup v2
 if you get this error:
