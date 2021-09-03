@@ -2,13 +2,12 @@
 
 It requires LXD to be setup
 
+Here is the process I've gone through to get set up. My system was running Debian GNU/Linux 10 (buster) and later Debian GNU/Linux 11 (bullseye)
 
-No idea if ive done this the best way but here are the commands I've run to get set up. My system was running Debian GNU/Linux 10 (buster)
-lxd requires snap to be setup.
+You can skip the initial lxd setup if you already have lxc & lxd setup, just head to the commands to make the container
 
-You can skip much of this if you already have lxc/lxd setup just need the commands to make the container
-
-### Do the following commands as root
+### Install lxc and lxd
+Do the following commands as root:
 ```bash
 apt install lxc debian-archive-keyring snapd
 snap install core
@@ -23,6 +22,7 @@ https://linuxcontainers.org/lxd/docs/master/storage
 ```bash
 lxd init
 ```
+### Make Container
 Now you can create the container and enter it:
 ```bash
 lxc launch images:debian/11 codesand
@@ -47,7 +47,7 @@ adduser codesand games
 ```
 Install anything else you might need for running scripts etc
 
-If you install kotlin you need to do it manually because it seems snap cant run inside lxc
+If you install kotlin you need to do it manually because it seems snap can't run inside lxc
 
 If you need to update or install things on all the containers later there are instructions to do that. 
 ```bash
@@ -187,11 +187,3 @@ Basically the execution process will do as follows:
   seems to take about 10 seconds?
 
 
-###Things to consider:
-* Timeout on execution
-  * Instance root will killall -u codesand after time is up
-  * timeout command won't work with forkbombs, we will need to 
-  * Want to be able to show in channel reply that it timed out.
-* How OOM and forkbomb etc gets handled
-  * Forkbombs I think will be handled ok with timeout and default ulimits
-  * OOM hope and pray
