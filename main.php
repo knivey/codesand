@@ -93,6 +93,7 @@ Amp\Loop::run(function () {
                 "content-type" => "text/plain; charset=utf-8"
             ], "Must specify a runner");
         }
+        //TODO some system of detecting if these are installed to run
         switch ($args['runner']) {
             case 'php':
                 $reply = yield $cont->runPHP($code);
