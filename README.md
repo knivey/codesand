@@ -145,12 +145,13 @@ This will make your system use cgroups v1 **you should remove this when lxc full
 Switch the codesand container to the default profile (we shouldn't be using it for any api calls so no need to stop server yet)
 ```bash
 lxc profile assign codesand default
+lxc restart codesand
 ```
 Enter the container to install packages or updates then exit
 ```bash
 lxc exec codesand -- /bin/bash
 ```
-Reassign the limited codesand profile and update snapshot
+When done, reassign the limited codesand profile and update snapshot
 ```bash
 lxc profile assign codesand codesand
 lxc restart codesand
