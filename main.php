@@ -88,6 +88,7 @@ Amp\Loop::run(function () {
         parse_str($request->getUri()->getQuery(), $v);
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $flags = $v['flags'] ?? '';
+        $flags2 = $v['flags2'] ?? '';
         $args = $request->getAttribute(Router::class);
         if(!isset($args['runner'])) { // todo not sure if needed
             return new Response(Status::BAD_REQUEST, [
@@ -115,7 +116,7 @@ Amp\Loop::run(function () {
                 $reply = yield $cont->runTcc($code, $flags);
                 break;
             case 'gcc':
-                $reply = yield $cont->runGcc($code, $flags);
+                $reply = yield $cont->runGcc($code, $flags, $flags2);
                 break;
             case 'gpp':
                 $reply = yield $cont->runGpp($code, $flags);
