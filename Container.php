@@ -199,15 +199,63 @@ class Container
         });
     }
 
-    function runTcc(string $code)
+    function runPerl(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting perl code run\n";
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.pl', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- perl /home/codesand/$fname ; echo");
+        });
+    }
+
+    function runTcl(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting perl code run\n";
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.tcl', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcl /home/codesand/$fname ; echo");
+        });
+    }
+
+    function runJava(string $code)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting perl code run\n";
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.java', "class code { $code }");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- javac /home/codesand/$fname && java code ; echo");
+        });
+    }
+
+    function runTcc(string $code, string $flags)
     {
         $this->busy = true;
         echo "{$this->name} starting tcc code run\n";
-        return \Amp\call(function () use ($code) {
-            // probably not needed but might be nice to have
-            $code = str_replace('\n', "\n", $code);
+        return \Amp\call(function () use ($code, $flags) {
             $fname = yield $this->sendFile('code.c', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcc -run /home/codesand/$fname ; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcc -run $flags /home/codesand/$fname ; echo");
+        });
+    }
+
+    function runGcc(string $code, string $flags)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting gcc code run\n";
+        return \Amp\call(function () use ($code, $flags) {
+            $fname = yield $this->sendFile('code.c', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- gcc $flags /home/codesand/$fname && ./a.out ; echo");
+        });
+    }
+
+    function runGpp(string $code, string $flags)
+    {
+        $this->busy = true;
+        echo "{$this->name} starting g++ code run\n";
+        return \Amp\call(function () use ($code, $flags) {
+            $fname = yield $this->sendFile('code.cpp', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- g++ $flags /home/codesand/$fname && ./a.out ; echo");
         });
     }
 
