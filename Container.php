@@ -239,13 +239,13 @@ class Container
         });
     }
 
-    function runGcc(string $code, string $flags, string $flags2)
+    function runGcc(string $code, string $flags, string $flagsb)
     {
         $this->busy = true;
         echo "{$this->name} starting gcc code run\n";
-        return \Amp\call(function () use ($code, $flags) {
+        return \Amp\call(function () use ($code, $flags, $flagsb) {
             $fname = yield $this->sendFile('code.c', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"gcc $flags /home/codesand/$fname $flags2 && ./a.out \"; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"gcc $flags /home/codesand/$fname $flagsb && ./a.out \"; echo");
         });
     }
 
