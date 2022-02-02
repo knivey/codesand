@@ -225,7 +225,7 @@ class Container
         echo "{$this->name} starting perl code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.java', "class code { $code }");
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- javac /home/codesand/$fname && java -cp /home/codesand/ code ; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"javac /home/codesand/$fname && java -cp /home/codesand/ code\" ; echo");
         });
     }
 
@@ -245,7 +245,7 @@ class Container
         echo "{$this->name} starting gcc code run\n";
         return \Amp\call(function () use ($code, $flags) {
             $fname = yield $this->sendFile('code.c', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- gcc $flags /home/codesand/$fname -o /home/codesand/a.out && /home/codesand/a.out ; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"gcc $flags /home/codesand/$fname && ./a.out \"; echo");
         });
     }
 
@@ -256,7 +256,7 @@ class Container
         return \Amp\call(function () use ($code, $flags) {
             // TODO need to handle #include files g++ doesnt let them all be on one line
             $fname = yield $this->sendFile('code.cpp', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- g++ $flags /home/codesand/$fname -o /home/codesand/a.out && /home/codesand/a.out ; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"g++ $flags /home/codesand/$fname && ./a.out \"; echo");
         });
     }
 
