@@ -212,7 +212,7 @@ class Container
     function runTcl(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting perl code run\n";
+        echo "{$this->name} starting tcl code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.tcl', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcl /home/codesand/$fname ; echo");
@@ -222,7 +222,7 @@ class Container
     function runJava(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting perl code run\n";
+        echo "{$this->name} starting java code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.java', "class code { $code }");
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"javac /home/codesand/$fname && java -cp /home/codesand/ code\" ; echo");
