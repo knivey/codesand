@@ -215,7 +215,7 @@ class Container
         echo "{$this->name} starting tcl code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.tcl', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcl /home/codesand/$fname ; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tclsh /home/codesand/$fname ; echo");
         });
     }
 
