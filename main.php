@@ -89,6 +89,7 @@ Amp\Loop::run(function () {
         $cont->setMaxLines(($v['maxlines'] ?? 10));
         $flags = $v['flags'] ?? '';
         $flagsb = $v['flagsb'] ?? '';
+        //TODO timeout parameter
         $args = $request->getAttribute(Router::class);
         if(!isset($args['runner'])) { // todo not sure if needed
             return new Response(Status::BAD_REQUEST, [

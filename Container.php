@@ -275,7 +275,7 @@ class Container
         return \Amp\call(function () use ($code, $flags) {
             // TODO need to handle #include files g++ doesnt let them all be on one line
             $fname = yield $this->sendFile('code.cpp', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"g++ $flags /home/codesand/$fname && ./a.out \"; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"g++ $flags /home/codesand/$fname && ./a.out \"; echo", 10000);
         });
     }
 
@@ -283,8 +283,8 @@ class Container
      * Runs cmd on container asyncly capturing output for channel
      * @param $cmd
      */
-    function runCMD($cmd) {
-        return \Amp\call(function () use ($cmd) {
+    function runCMD($cmd, $timeout = 5000) {
+        return \Amp\call(function () use ($cmd, $timeout) {
             $this->busy = true;
             echo "launching Process with: $cmd\n";
             try {
@@ -295,8 +295,7 @@ class Container
                 echo "{$this->name} runCMD joining proc\n";
                 try {
                     $this->stopEarlyDeferred = new \Amp\Deferred();
-                    //TODO make timeout configurable
-                    yield \Amp\Promise\timeout(\Amp\Promise\first([$this->proc->join(), $this->stopEarlyDeferred->promise()]), 5000);
+                    yield \Amp\Promise\timeout(\Amp\Promise\first([$this->proc->join(), $this->stopEarlyDeferred->promise()]), $timeout);
                     echo "{$this->name} runCMD joined proc (or maxlines)\n";
                     if(json_encode($this->out) === false) {
                         $this->out = [json_last_error_msg()];
