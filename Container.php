@@ -126,7 +126,7 @@ class Container
             // but for some reason \Amp\Process doesn't realize it
             if($this->proc->isRunning()) {
                 try {
-                    echo yield $this->rootExec("ps aux");
+                    //echo yield $this->rootExec("ps aux");
                     yield \Amp\Promise\timeout($this->proc->join(), 3000);
                 } catch (\Amp\TimeoutException $e) {
                     echo "{$this->name} proc still running, doing proc->kill()\n";
