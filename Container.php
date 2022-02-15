@@ -121,6 +121,24 @@ class Container
             //During testing with forkbombs etc normal kill methods did not work well and took forever
             //An alternative to this could be lxc stop {$this->>name} --timeout 1 --force
             yield $this->rootExec("killall -9 -u codesand");
+            // Trying not to send SIGKILL to the actual lxc exec command here
+            // testing has shown that the above killall /should/ make the lxc exec exit
+            // but for some reason \Amp\Process doesn't realize it
+            if($this->proc->isRunning()) {
+                try {
+                    echo yield $this->rootExec("ps aux");
+                    yield \Amp\Promise\timeout($this->proc->join(), 3000);
+                } catch (\Amp\TimeoutException $e) {
+                    echo "{$this->name} proc still running, doing proc->kill()\n";
+                    try {
+                        $this->proc->kill();
+                    } catch (\Exception $e) {
+                        echo "{$this->name} Exception with kill(): {$e->getMessage()}\n";
+                    }
+                } catch (\Exception $e) {
+                    echo "{$this->name} Exception while killing proc: {$e->getMessage()}\n";
+                }
+            }
             echo "restoring {$this->name}\n";
             yield $this->asyncExec("lxc restore {$this->name} default");
             echo "restored {$this->name}\n";
@@ -279,7 +297,7 @@ class Container
                     $this->stopEarlyDeferred = new \Amp\Deferred();
                     //TODO make timeout configurable
                     yield \Amp\Promise\timeout(\Amp\Promise\first([$this->proc->join(), $this->stopEarlyDeferred->promise()]), 5000);
-                    echo "{$this->name} runCMD joined proc\n";
+                    echo "{$this->name} runCMD joined proc (or maxlines)\n";
                     if(json_encode($this->out) === false) {
                         $this->out = [json_last_error_msg()];
                     }
