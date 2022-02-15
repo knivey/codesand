@@ -3,8 +3,10 @@ namespace codesand;
 
 use Amp\ByteStream\LineReader;
 use Amp\Process\Process;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 
-class Container
+class Container implements LoggerAwareInterface
 {
     public bool $busy = false;
     protected ?Process $proc = null;
@@ -12,14 +14,16 @@ class Container
     public int $maxlines = 10;
     private ?\Amp\Deferred $stopEarlyDeferred;
 
-    public function __construct(public string $name)
+    public function __construct(
+        public string $name,
+        protected LoggerInterface $log)
     {
         if(strtolower($this->getStatus()) != "running") {
-            echo "Container $name is not running attempting to start it...\n";
+            $this->log->notice("Container $name is not running attempting to start it...");
             passthru("lxc start $name");
         }
         if(strtolower($this->getStatus()) != "running") {
-            die("Container $name still is not running?? status: ".$this->getStatus()."\n");
+            die("Container $name still is not running?? status: {$this->getStatus()}\n");
         }
     }
 
@@ -31,6 +35,11 @@ class Container
             // TODO Cancel any amp watchers etc, block for restart to finish?
             $this->restart();
         }
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->log = $logger;
     }
 
     /**
@@ -53,7 +62,7 @@ class Container
      */
     function rootExec($exec) {
         return \Amp\call(function () use ($exec) {
-            echo " {$this->name} root$ $exec\n";
+            $this->log->info("root$ $exec");
             $out = yield $this->asyncExec("lxc exec {$this->name} -T -n -- $exec");
             return implode("\n", $out);
         });
@@ -64,7 +73,7 @@ class Container
      */
     function userExec($exec) {
         return \Amp\call(function () use ($exec) {
-            echo " {$this->name} user$ $exec\n";
+            $this->log->info("user$ $exec");
             $out = yield $this->asyncExec("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- $exec");
             return implode("\n", $out);
         });
@@ -104,7 +113,7 @@ class Container
      */
     function hostExec($exec) {
         return \Amp\call(function () use ($exec) {
-            echo " {$this->name} host$ $exec\n";
+            $this->log->info("host$ $exec");
             $out = yield $this->asyncExec($exec);
             return implode("\n", $out);
         });
@@ -129,19 +138,19 @@ class Container
                     //echo yield $this->rootExec("ps aux");
                     yield \Amp\Promise\timeout($this->proc->join(), 3000);
                 } catch (\Amp\TimeoutException $e) {
-                    echo "{$this->name} proc still running, doing proc->kill()\n";
+                    $this->log->info("proc still running, doing proc->kill()");
                     try {
                         $this->proc->kill();
                     } catch (\Exception $e) {
-                        echo "{$this->name} Exception with kill(): {$e->getMessage()}\n";
+                        $this->log->notice("Exception with kill(): {$e->getMessage()}");
                     }
                 } catch (\Exception $e) {
-                    echo "{$this->name} Exception while killing proc: {$e->getMessage()}\n";
+                    $this->log->notice("Exception while killing proc: {$e->getMessage()}");
                 }
             }
-            echo "restoring {$this->name}\n";
+            $this->log->info("restoring");
             yield $this->asyncExec("lxc restore {$this->name} default");
-            echo "restored {$this->name}\n";
+            $this->log->info("restored");
             $this->busy = false;
             $this->restarting = false;
             //sometimes will have Killed or ERR if timed out
@@ -169,7 +178,7 @@ class Container
     function runPHP(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting php code run\n";
+        $this->log->info("starting php code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile("code.php", "<?php\n$code\n");
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- php /home/codesand/$fname ; echo");
@@ -181,7 +190,7 @@ class Container
     function runBash(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting bash code run\n";
+        $this->log->info("starting bash code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.sh', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -l /home/codesand/$fname ; echo");
@@ -191,7 +200,7 @@ class Container
     function runFish(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting fish code run\n";
+        $this->log->info("starting fish code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.fish', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/fish -l /home/codesand/$fname ; echo");
@@ -201,7 +210,7 @@ class Container
     function runPy3(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting python code run\n";
+        $this->log->info("starting python code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python3 /home/codesand/$fname ; echo");
@@ -211,7 +220,7 @@ class Container
     function runPy2(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting python code run\n";
+        $this->log->info("starting python code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python2 /home/codesand/$fname ; echo");
@@ -221,7 +230,7 @@ class Container
     function runPerl(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting perl code run\n";
+        $this->log->info("starting perl code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.pl', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- perl /home/codesand/$fname ; echo");
@@ -231,7 +240,7 @@ class Container
     function runTcl(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting tcl code run\n";
+        $this->log->info("starting tcl code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.tcl', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tclsh /home/codesand/$fname ; echo");
@@ -241,7 +250,7 @@ class Container
     function runJava(string $code)
     {
         $this->busy = true;
-        echo "{$this->name} starting java code run\n";
+        $this->log->info("starting java code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.java', "class code { $code }");
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"javac /home/codesand/$fname && java -cp /home/codesand/ code\" ; echo");
@@ -251,7 +260,7 @@ class Container
     function runTcc(string $code, string $flags)
     {
         $this->busy = true;
-        echo "{$this->name} starting tcc code run\n";
+        $this->log->info("starting tcc code run");
         return \Amp\call(function () use ($code, $flags) {
             $fname = yield $this->sendFile('code.c', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcc -run $flags /home/codesand/$fname ; echo");
@@ -261,7 +270,7 @@ class Container
     function runGcc(string $code, string $flags, string $flagsb)
     {
         $this->busy = true;
-        echo "{$this->name} starting gcc code run\n";
+        $this->log->info("starting gcc code run");
         return \Amp\call(function () use ($code, $flags, $flagsb) {
             $fname = yield $this->sendFile('code.c', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"gcc $flags /home/codesand/$fname $flagsb && ./a.out \"; echo");
@@ -271,7 +280,7 @@ class Container
     function runGpp(string $code, string $flags)
     {
         $this->busy = true;
-        echo "{$this->name} starting g++ code run\n";
+        $this->log->info("starting g++ code run");
         return \Amp\call(function () use ($code, $flags) {
             // TODO need to handle #include files g++ doesnt let them all be on one line
             $fname = yield $this->sendFile('code.cpp', $code);
@@ -286,17 +295,17 @@ class Container
     function runCMD($cmd, $timeout = 5000) {
         return \Amp\call(function () use ($cmd, $timeout) {
             $this->busy = true;
-            echo "launching Process with: $cmd\n";
+            $this->log->info("launching Process", compact('cmd'));
             try {
                 $this->proc = new Process($cmd);
                 yield $this->proc->start();
                 \Amp\asyncCall([$this, 'getStdout']);
                 \Amp\asyncCall([$this, 'getStderr']);
-                echo "{$this->name} runCMD joining proc\n";
+                $this->log->info("runCMD joining proc");
                 try {
                     $this->stopEarlyDeferred = new \Amp\Deferred();
                     yield \Amp\Promise\timeout(\Amp\Promise\first([$this->proc->join(), $this->stopEarlyDeferred->promise()]), $timeout);
-                    echo "{$this->name} runCMD joined proc (or maxlines)\n";
+                    $this->log->info("runCMD joined proc (or maxlines)");
                     if(json_encode($this->out) === false) {
                         $this->out = [json_last_error_msg()];
                     }
@@ -305,10 +314,11 @@ class Container
                         $this->out = [json_last_error_msg()];
                     }
                     $this->out[] = "timeout reached";
-                    echo "{$this->name} runCMD timed out\n";
+                    $this->log->info("runCMD timed out");
                 }
             } catch (\Amp\Process\ProcessException $e) {
                 $this->out[] = "Exception: " . $e->getMessage();
+                $this->log->info("ProcessException", compact('e'));
             }
             $out = $this->out;
             $this->finish();
@@ -325,7 +335,7 @@ class Container
             $this->out[] = "OUT: $line";
             if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
-                echo "{$this->name} max lines reached\n";
+                $this->log->info("max lines reached");
                 $this->stopEarlyDeferred->resolve();
                 break;
             }
@@ -344,7 +354,7 @@ class Container
             $this->out[] = "ERR: $line";
             if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
-                echo "{$this->name} max lines reached\n";
+                $this->log->info("max lines reached");
                 $this->stopEarlyDeferred->resolve();
                 break;
             }

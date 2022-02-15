@@ -33,10 +33,15 @@ if(empty($contList)) {
     die("No containers listed");
 }
 
+$logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
+$logHandler->setFormatter(new ConsoleFormatter);
+
 /* @var $containers Container[] */
 $containers = [];
 foreach($contList as $name) {
-    $containers[] = new Container($name);
+    $logger = new Logger($name);
+    $logger->pushHandler($logHandler);
+    $containers[] = new Container($name, $logger);
 }
 
 /**
@@ -52,14 +57,12 @@ function getContainer() {
 }
 
 Amp\Loop::run(function () {
-    global $config;
+    global $config, $logHandler;
     $servers = [];
     foreach($config['listen'] as $listen) {
         $servers[] = Socket\Server::listen($listen);
     }
 
-    $logHandler = new StreamHandler(new ResourceOutputStream(\STDOUT));
-    $logHandler->setFormatter(new ConsoleFormatter);
     $logger = new Logger('server');
     $logger->pushHandler($logHandler);
 
