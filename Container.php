@@ -10,6 +10,7 @@ class Container
     protected ?Process $proc = null;
     public array $out = [];
     public int $maxlines = 10;
+    private ?\Amp\Deferred $stopEarlyDeferred;
 
     public function __construct(public string $name)
     {
@@ -275,13 +276,14 @@ class Container
                 \Amp\asyncCall([$this, 'getStderr']);
                 echo "{$this->name} runCMD joining proc\n";
                 try {
-                    yield \Amp\Promise\timeout($this->proc->join(), 5000);
+                    $this->stopEarlyDeferred = new \Amp\Deferred();
+                    //TODO make timeout configurable
+                    yield \Amp\Promise\timeout(\Amp\Promise\first([$this->proc->join(), $this->stopEarlyDeferred->promise()]), 5000);
                     echo "{$this->name} runCMD joined proc\n";
                     if(json_encode($this->out) === false) {
                         $this->out = [json_last_error_msg()];
                     }
                 } catch (\Amp\TimeoutException $e) {
-                    //$this->proc->kill();
                     if(json_encode($this->out) === false) {
                         $this->out = [json_last_error_msg()];
                     }
@@ -306,6 +308,8 @@ class Container
             $this->out[] = "OUT: $line";
             if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
+                echo "{$this->name} max lines reached\n";
+                $this->stopEarlyDeferred->resolve();
                 break;
             }
             if (strlen(implode(' ', $this->out)) > 40000) {
@@ -323,6 +327,8 @@ class Container
             $this->out[] = "ERR: $line";
             if(count($this->out) > $this->maxlines) {
                 $this->out[] = "max lines reached";
+                echo "{$this->name} max lines reached\n";
+                $this->stopEarlyDeferred->resolve();
                 break;
             }
             if (strlen(implode(' ', $this->out)) > 40000) {
