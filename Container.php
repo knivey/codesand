@@ -184,7 +184,7 @@ class Container
         echo "{$this->name} starting bash code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.sh', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash /home/codesand/$fname ; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -l /home/codesand/$fname ; echo");
         });
     }
 
@@ -194,7 +194,7 @@ class Container
         echo "{$this->name} starting fish code run\n";
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.fish', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/fish /home/codesand/$fname ; echo");
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/fish -l /home/codesand/$fname ; echo");
         });
     }
 
