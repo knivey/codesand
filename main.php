@@ -68,6 +68,10 @@ Amp\Loop::run(function () {
 
     $router = new Router;
     $router->stack(new \Amp\Http\Server\Middleware\CallableMiddleware(function (Request $request, RequestHandler $requestHandler) {
+        if(file_exists(__DIR__ ."/maintenance")) {
+            return new Response(Status::SERVICE_UNAVAILABLE, ['content-type' => 'text/plain'],
+                'Currently performing maintenance on the system :( try again later');
+        }
         if(!validKey($request->getHeader("key"))) {
             return new Response(Status::UNAUTHORIZED, ['content-type' => 'text/plain'], 'You need a valid key.');
         }
