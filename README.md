@@ -163,7 +163,7 @@ Delete all containers in the pool and then remake them from the updated codesand
 ```bash
 lxc delete $(cat container.list) --force
 rm container.list
-./makeContainers 10
+./makeContainers.php 10
 ```
 Then you may start the server again
 
