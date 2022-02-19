@@ -6,7 +6,7 @@ use Amp\Process\Process;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 
-class Container implements LoggerAwareInterface
+class Container //implements LoggerAwareInterface
 {
     public bool $busy = false;
     protected ?Process $proc = null;
@@ -37,7 +37,7 @@ class Container implements LoggerAwareInterface
         }
     }
 
-    public function setLogger(LoggerInterface $logger)
+    public function setLogger(\Psr\Log\LoggerInterface $logger)
     {
         $this->log = $logger;
     }
@@ -284,7 +284,7 @@ class Container implements LoggerAwareInterface
         return \Amp\call(function () use ($code, $flags) {
             // TODO need to handle #include files g++ doesnt let them all be on one line
             $fname = yield $this->sendFile('code.cpp', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"g++ $flags /home/codesand/$fname && ./a.out \"; echo", 10000);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"g++ $flags -O0 /home/codesand/$fname && ./a.out \"; echo", 10000);
         });
     }
 
