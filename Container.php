@@ -166,7 +166,7 @@ class Container //implements LoggerAwareInterface
             file_put_contents($file, $contents);
             //this becomes very slow https://github.com/lxc/lxd/issues/3317
             //yield $this->hostExec("lxc file push $file {$this->name}/home/codesand/");
-            yield $this->hostExec("tar cf - $file | lxc exec codesand -- tar xf -");
+            yield $this->hostExec("tar cf - $fname | lxc exec codesand -- tar xf -");
             yield $this->rootExec("chown -R codesand:codesand /home/codesand/");
             return $fname;
         });
