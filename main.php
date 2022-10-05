@@ -114,6 +114,9 @@ Amp\Loop::run(function () {
             case 'fish':
                 $reply = yield $cont->runFish($code);
                 break;
+            case 'ruby':
+                $reply = yield $cont->runRuby($code);
+                break;
             case 'python3':
                 $reply = yield $cont->runPy3($code);
                 break;

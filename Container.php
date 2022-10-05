@@ -209,6 +209,16 @@ class Container //implements LoggerAwareInterface
         });
     }
 
+    function runRuby(string $code)
+    {
+        $this->busy = true;
+        $this->log->info("starting ruby code run");
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.rb', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/ruby /home/codesand/$fname ; echo");
+        });
+    }
+
     function runPy3(string $code)
     {
         $this->busy = true;
