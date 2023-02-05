@@ -167,24 +167,5 @@ rm container.list
 ```
 Then you may start the server again
 
-### Other thoughts
-Using lxd the containers are already ran unprivileged.
-
-
-Basically the execution process will do as follows:
-* copy code to a file on instance
-  ```
-  lxc file push test.php codesand/home/codesand/
-  lxc exec codesand -- /bin/chown codesand:codesand /home/codesand/test.php
-  ```
-* execute that file
-  ```
-  timeout 15 lxc exec codesand -- su --login codesand -c 'php test.php'
-  ```
-* reset instance to default snapshot
-  ```
-  lxc restore codesand default
-  ```
-  seems to take about 10 seconds?
 
 
