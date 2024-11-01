@@ -249,6 +249,16 @@ class Container //implements LoggerAwareInterface
         });
     }
 
+    function runJavascript(string $code)
+    {
+        $this->busy = true;
+        $this->log->info("starting javascript code run");
+        return \Amp\call(function () use ($code) {
+            $fname = yield $this->sendFile('code.js', $code);
+            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- node /home/codesand/$fname ; echo");
+        });
+    }
+
     function runPerl(string $code)
     {
         $this->busy = true;

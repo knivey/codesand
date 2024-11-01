@@ -126,6 +126,9 @@ Amp\Loop::run(function () {
             case 'golang':
                 $reply = yield $cont->runGolang($code);
                 break;
+            case 'javascript':
+                $reply = yield $cont->runJavascript($code);
+                break;
             case 'tcc':
                 $reply = yield $cont->runTcc($code, $flags);
                 break;
