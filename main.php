@@ -123,6 +123,9 @@ Amp\Loop::run(function () {
             case 'python2':
                 $reply = yield $cont->runPy2($code);
                 break;
+            case 'golang':
+                $reply = yield $cont->runGolang($code);
+                break;
             case 'tcc':
                 $reply = yield $cont->runTcc($code, $flags);
                 break;
