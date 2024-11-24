@@ -245,7 +245,7 @@ class Container //implements LoggerAwareInterface
         $this->log->info("starting golang code run");
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.go', $code);
-            return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- go run /home/codesand/$fname ; echo");
+            return $this->runCMD("lxc exec {$this->name} -n -T -- su -l codesand -c \"go run /home/codesand/$fname ; echo\"");
         });
     }
 
