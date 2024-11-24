@@ -180,7 +180,7 @@ class Container //implements LoggerAwareInterface
     function runPHP(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting php code run");
+        $this->log->info("starting php code run", ['code' => $code]); 
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile("code.php", "<?php\n$code\n");
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- php /home/codesand/$fname ; echo");
@@ -192,7 +192,7 @@ class Container //implements LoggerAwareInterface
     function runBash(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting bash code run");
+        $this->log->info("starting bash code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.sh', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /bin/bash -l /home/codesand/$fname ; echo");
@@ -202,7 +202,7 @@ class Container //implements LoggerAwareInterface
     function runFish(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting fish code run");
+        $this->log->info("starting fish code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.fish', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/fish -l /home/codesand/$fname ; echo");
@@ -212,7 +212,7 @@ class Container //implements LoggerAwareInterface
     function runRuby(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting ruby code run");
+        $this->log->info("starting ruby code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.rb', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- /usr/bin/ruby /home/codesand/$fname ; echo");
@@ -222,7 +222,7 @@ class Container //implements LoggerAwareInterface
     function runPy3(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting python code run");
+        $this->log->info("starting python code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python3 /home/codesand/$fname ; echo");
@@ -232,7 +232,7 @@ class Container //implements LoggerAwareInterface
     function runPy2(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting python code run");
+        $this->log->info("starting python code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.py', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- python2 /home/codesand/$fname ; echo");
@@ -242,7 +242,7 @@ class Container //implements LoggerAwareInterface
     function runGolang(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting golang code run");
+        $this->log->info("starting golang code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.go', $code);
             return $this->runCMD("lxc exec {$this->name} -n -T -- su -l codesand -c \"go run /home/codesand/$fname ; echo\"", 10000);
@@ -252,7 +252,7 @@ class Container //implements LoggerAwareInterface
     function runJavascript(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting javascript code run");
+        $this->log->info("starting javascript code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.js', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- node /home/codesand/$fname ; echo");
@@ -262,7 +262,7 @@ class Container //implements LoggerAwareInterface
     function runPerl(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting perl code run");
+        $this->log->info("starting perl code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.pl', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- perl /home/codesand/$fname ; echo");
@@ -272,7 +272,7 @@ class Container //implements LoggerAwareInterface
     function runTcl(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting tcl code run");
+        $this->log->info("starting tcl code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.tcl', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tclsh /home/codesand/$fname ; echo");
@@ -282,7 +282,7 @@ class Container //implements LoggerAwareInterface
     function runJava(string $code)
     {
         $this->busy = true;
-        $this->log->info("starting java code run");
+        $this->log->info("starting java code run", ['code' => $code]);
         return \Amp\call(function () use ($code) {
             $fname = yield $this->sendFile('code.java', "class code { $code }");
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"javac /home/codesand/$fname && java -cp /home/codesand/ code\" ; echo");
@@ -292,7 +292,7 @@ class Container //implements LoggerAwareInterface
     function runTcc(string $code, string $flags)
     {
         $this->busy = true;
-        $this->log->info("starting tcc code run");
+        $this->log->info("starting tcc code run", ['code' => $code]);
         return \Amp\call(function () use ($code, $flags) {
             $fname = yield $this->sendFile('code.c', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- tcc -run $flags /home/codesand/$fname ; echo");
@@ -302,7 +302,7 @@ class Container //implements LoggerAwareInterface
     function runGcc(string $code, string $flags, string $flagsb)
     {
         $this->busy = true;
-        $this->log->info("starting gcc code run");
+        $this->log->info("starting gcc code run", ['code' => $code]);
         return \Amp\call(function () use ($code, $flags, $flagsb) {
             $fname = yield $this->sendFile('code.c', $code);
             return $this->runCMD("lxc exec {$this->name} --user 1000 --group 1000 -T --cwd /home/codesand -n -- bash -c \"gcc $flags /home/codesand/$fname $flagsb && ./a.out \"; echo");
@@ -312,7 +312,7 @@ class Container //implements LoggerAwareInterface
     function runGpp(string $code, string $flags)
     {
         $this->busy = true;
-        $this->log->info("starting g++ code run");
+        $this->log->info("starting g++ code run", ['code' => $code]);
         return \Amp\call(function () use ($code, $flags) {
             // TODO need to handle #include files g++ doesnt let them all be on one line
             $fname = yield $this->sendFile('code.cpp', $code);
