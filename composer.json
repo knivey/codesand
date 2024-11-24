@@ -22,5 +22,8 @@
     "ext-pcntl": "*",
     "symfony/yaml": "^5.2",
     "ext-json": "*"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.0"
   }
 }
